@@ -12,6 +12,7 @@
     "format:check": "prettier --check .",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
+    "build": "pnpm -r --filter @currency/core --filter @currency/functions build",
     "typecheck": "tsc -b",
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
@@ -25,6 +26,11 @@
     "*.{json,jsonc,md,yml,yaml,css}": [
       "prettier --write"
     ]
+  },
+  "pnpm": {
+    "overrides": {
+      "postcss": ">=8.5.10"
+    }
   },
   "devDependencies": {
     "@commitlint/cli": "^21.0.2",

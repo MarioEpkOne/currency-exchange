@@ -23,4 +23,4 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm audit --audit-level=high # fail only on high/critical advisories
-      # - run: pnpm build   # enable once a workspace package produces build output
+      - run: pnpm build # builds @currency/core and @currency/functions via tsc -b
