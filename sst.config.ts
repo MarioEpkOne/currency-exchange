@@ -46,14 +46,13 @@ export default $config({
     // Defined before the site so api.url is available for the site's
     // NEXT_PUBLIC_API_URL env var. Routes are wired after the functions are defined.
     const api = new sst.aws.ApiGatewayV2('Api', {
-      cors: {
-        // Allowlist: localhost:3000 for local dev.
-        // The deployed site origin is allowlisted at the Lambda level via
-        // CORS_ALLOW_ORIGIN (set on each function below, referencing site.url).
-        allowOrigins: ['http://localhost:3000'],
-        allowMethods: ['GET', 'OPTIONS'],
-        allowHeaders: ['Content-Type'],
-      },
+      // CORS is owned by the Lambda layer (respond.ts), which echoes an allowlisted
+      // origin per request (the deployed site via CORS_ALLOW_ORIGIN + localhost:3000) —
+      // never a wildcard. Gateway-managed CORS is disabled because it would otherwise
+      // STRIP the Lambda's Access-Control-Allow-Origin header, and it cannot reference
+      // site.url here (the site is defined after the api so it can consume api.url).
+      // All routes are simple GETs, so no browser preflight is required.
+      cors: false,
       throttle: {
         // 20 rps steady-state, 40 burst — tune as needed.
         rate: 20,
