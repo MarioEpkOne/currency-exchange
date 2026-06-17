@@ -11,7 +11,7 @@ type FormState =
   | { status: 'error'; code: string; message: string }
   | { status: 'unavailable'; message: string };
 
-export function ConvertForm() {
+export function ConvertForm({ onConverted }: { onConverted?: () => void }) {
   const [currencies, setCurrencies] = useState<CurrenciesResponse | null>(null);
   const [from, setFrom] = useState('USD');
   const [to, setTo] = useState('EUR');
@@ -32,6 +32,7 @@ export function ConvertForm() {
     try {
       const result = await convert(from, to, amount);
       setState({ status: 'success', result });
+      onConverted?.();
     } catch (err) {
       if (err instanceof ApiClientError) {
         if (err.httpStatus === 503) {
@@ -45,44 +46,71 @@ export function ConvertForm() {
     }
   };
 
+  const swap = () => {
+    setFrom(to);
+    setTo(from);
+  };
+
+  // Only the ISO code is shown (it's all that's needed and keeps the control
+  // readable); the full name rides along as a tooltip for accessibility.
   const currencyOptions = currencies
     ? Object.entries(currencies.currencies).map(([code, name]) => (
-        <option key={code} value={code}>
-          {code} — {name}
+        <option key={code} value={code} title={name}>
+          {code}
         </option>
       ))
     : null;
 
+  const disabled = state.status === 'loading' || currencies === null;
+
   return (
     <div>
       <form onSubmit={(e) => void handleSubmit(e)}>
-        <div className="form-row">
-          <div>
-            <label htmlFor="amount">Amount</label>
-            <input
-              id="amount"
-              type="text"
-              inputMode="decimal"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="100"
-              required
-            />
-          </div>
-          <div>
+        <div className="field">
+          <label htmlFor="amount">Amount</label>
+          <input
+            id="amount"
+            type="text"
+            inputMode="decimal"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            placeholder="100"
+            autoComplete="off"
+            required
+          />
+        </div>
+
+        <div className="currency-row">
+          <div className="field">
             <label htmlFor="from">From</label>
-            <select id="from" value={from} onChange={(e) => setFrom(e.target.value)}>
-              {currencyOptions}
-            </select>
+            <div className="select-wrap">
+              <select id="from" value={from} onChange={(e) => setFrom(e.target.value)}>
+                {currencyOptions}
+              </select>
+            </div>
           </div>
-          <div>
+
+          <button
+            type="button"
+            className="swap-btn"
+            onClick={swap}
+            aria-label="Swap currencies"
+            title="Swap currencies"
+          >
+            ⇄
+          </button>
+
+          <div className="field">
             <label htmlFor="to">To</label>
-            <select id="to" value={to} onChange={(e) => setTo(e.target.value)}>
-              {currencyOptions}
-            </select>
+            <div className="select-wrap">
+              <select id="to" value={to} onChange={(e) => setTo(e.target.value)}>
+                {currencyOptions}
+              </select>
+            </div>
           </div>
         </div>
-        <button className="btn" type="submit" disabled={state.status === 'loading'}>
+
+        <button className="btn" type="submit" disabled={disabled}>
           {state.status === 'loading' ? 'Converting…' : 'Convert'}
         </button>
       </form>
@@ -102,7 +130,7 @@ export function ConvertForm() {
 
 function ResultCard({ result }: { result: ConvertResult }) {
   return (
-    <div style={{ marginTop: '1.5rem' }}>
+    <div className="result">
       <div className="result-value">
         {result.result} {result.to}
         {result.stale && <span className="stale-badge">stale</span>}

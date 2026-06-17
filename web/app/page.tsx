@@ -1,6 +1,4 @@
-import { Suspense } from 'react';
-import { ConvertForm } from '../components/ConvertForm';
-import { StatsPanel } from '../components/StatsPanel';
+import { Dashboard } from '../components/Dashboard';
 
 export default function Home() {
   return (
@@ -10,19 +8,7 @@ export default function Home() {
         Live exchange rates, accurate to your currency&apos;s decimal places.
       </p>
 
-      <div className="card">
-        <ConvertForm />
-      </div>
-
-      <Suspense
-        fallback={
-          <div className="card" style={{ color: '#6b7280', fontSize: '0.875rem' }}>
-            Loading statistics…
-          </div>
-        }
-      >
-        <StatsPanel />
-      </Suspense>
+      <Dashboard />
     </main>
   );
 }

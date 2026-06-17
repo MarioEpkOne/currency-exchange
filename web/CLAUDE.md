@@ -9,20 +9,25 @@ This is the Next.js (App Router) frontend. It consumes `/api/convert`, `/api/cur
 
 - `lib/api.ts` uses `NEXT_PUBLIC_API_URL` (SST-injected) to reach our API — never the provider.
 - No `OPENEXCHANGERATES_APP_ID` anywhere in `web/` (it would end up in the client bundle).
-- `StatsPanel` is a Server Component. `ConvertForm` is a Client Component (`'use client'`).
-- The stale badge (`<span className="stale-badge">`) appears in `ConvertForm` and `ResultCard` whenever `result.stale === true`.
+- All three (`Dashboard`, `ConvertForm`, `StatsPanel`) are Client Components (`'use client'`).
+  `Dashboard` is the coordinator: a successful conversion bumps a counter passed to
+  `StatsPanel` as `refreshSignal`, so usage stats re-fetch **automatically** (no manual refresh).
+  `StatsPanel` keeps the prior numbers on screen while re-fetching (skeleton only on first load).
+- Currency `<select>`s render the **ISO code only** (full name is the `<option title>` tooltip) —
+  keeps the controls readable; long names no longer overflow.
+- The stale badge (`<span className="stale-badge">`) appears in the result whenever `result.stale === true`.
 
 ## Structure
 
 ```
 app/
   layout.tsx    # root layout with global CSS
-  page.tsx      # home page — ConvertForm + StatsPanel
+  page.tsx      # home page — title + <Dashboard/>
   globals.css   # styles
 components/
-  ConvertForm.tsx  # client component: form + result display
-  ResultCard.tsx   # reusable result card with stale badge
-  StatsPanel.tsx   # server component: stats from /api/stats
+  Dashboard.tsx    # client coordinator: wires conversion -> stats auto-refresh
+  ConvertForm.tsx  # client component: form (+ inline ResultCard) + swap button
+  StatsPanel.tsx   # client component: stats from /api/stats, refetch on refreshSignal
 lib/
   api.ts        # typed fetch wrappers — talks only to our API
 ```
