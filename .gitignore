@@ -1,0 +1,47 @@
+# Dependencies
+node_modules/
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/releases
+
+# Build outputs
+dist/
+build/
+out/
+.next/
+.open-next/
+*.tsbuildinfo
+
+# SST / infra state
+.sst/
+sst-env.d.ts
+.sst.json
+
+# Secrets & env — NEVER commit (openexchangerates App ID, AWS creds live here)
+.env
+.env.*
+!.env.example
+
+# Test / coverage
+coverage/
+.vitest/
+
+# Turbo / monorepo caches
+.turbo/
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.idea/
+*.swp
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
