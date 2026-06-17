@@ -107,9 +107,9 @@ gate stayed green.
 
 ### Rate-load precedes validation → 503 can pre-empt a 400
 
-**Category**: SPEC_DRIFT, PLAN_DEVIATION (plan vs. authoritative Edge table)
+**Category**: SPEC*DRIFT, PLAN_DEVIATION (plan vs. authoritative Edge table)
 **What happened**: `convert.ts` loads rates (and may throw `noRatesAvailable()` → 503) in step 1,
-_before_ `parseConvertRequest` in step 2. On cache-absent + provider-down, a request with missing/bad
+\_before* `parseConvertRequest` in step 2. On cache-absent + provider-down, a request with missing/bad
 params returns **503** instead of the **400** the Edge Cases table mandates.
 **Why**: Both the spec sketch and the impl plan (Step 14) order "load rates" before "validate"
 because validation needs the supported-currency set derived from `rates`. The Edge Cases table is
