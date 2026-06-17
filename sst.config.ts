@@ -91,6 +91,10 @@ export default $config({
         RATE_CACHE_TABLE: rateCacheTable.name,
         STATS_TABLE: statsTable.name,
         CORS_ALLOW_ORIGIN: site.url,
+        // provider.ts reads the App ID from this env var. `link` alone exposes the
+        // secret via the SST Resource object, NOT as a plain env var — so we map it
+        // here. Backend-only: never added to the `site`, so it can't reach the bundle.
+        OPENEXCHANGERATES_APP_ID: appIdSecret.value,
       },
     });
 
@@ -103,6 +107,8 @@ export default $config({
       environment: {
         RATE_CACHE_TABLE: rateCacheTable.name,
         CORS_ALLOW_ORIGIN: site.url,
+        // See ConvertFunction: map the linked Secret to the env var provider.ts reads.
+        OPENEXCHANGERATES_APP_ID: appIdSecret.value,
       },
     });
 
