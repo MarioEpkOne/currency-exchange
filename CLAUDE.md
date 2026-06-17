@@ -102,6 +102,25 @@ No build tooling exists yet. The committed stack (`GOAL.md` §4) implies:
 Package manager and exact scripts are TBD — **update this section with the real commands the moment
 `package.json` lands.**
 
+### Repository workflow & tooling
+
+- **Branch model:** `main` is the trunk and stays releasable. Do feature work on a branch/worktree,
+  rebase onto `main`, and integrate with **`git merge --ff-only`** (linear history; never `--no-ff`
+  or `--squash`). A `PreToolUse` guardrail (`.claude/hooks/guard-git-workflow.sh`) enforces this for
+  the agent (wired in `.claude/settings.json`, which the global gitignore keeps local — copy
+  `.claude/settings.json.example` to enable it in a fresh clone). The real gate is CI branch protection.
+- **Quality-gate ladder (wire up when `package.json` lands):** pre-commit = Prettier + ESLint on
+  **staged files only** (fast); pre-push = typecheck + affected unit tests; **CI = full lint +
+  typecheck + all tests + build + secret scan** — the authoritative gate, re-running everything
+  because local hooks are bypassable. Prettier formats, ESLint checks correctness; keep them separate
+  via `eslint-config-prettier`. Consider a lint rule banning native float math on money (invariant §5.1).
+- **Secrets:** `.github/workflows/secret-scan.yml` (gitleaks) runs on every push/PR. The provider App
+  ID lives only in `.env` (gitignored) or an SST Secret — see §5.6.
+- **Docs travel with code (anti-drift):** update the affected doc layer in the **same PR** as the
+  change (`.github/pull_request_template.md` has the checklist). Layers: this file + nested
+  per-package `CLAUDE.md` (agents) · `README.md` (setup) · `docs/adr/` (decisions — one ADR per
+  resolved §9 item) · generated OpenAPI (API contract) · CHANGELOG via Conventional Commits.
+
 ## 9. Deferred decisions (resolve in an implementation spec, then record here)
 
 Intentionally open in `GOAL.md`: exact DynamoDB table/key design + atomic-counter mechanism; whether
