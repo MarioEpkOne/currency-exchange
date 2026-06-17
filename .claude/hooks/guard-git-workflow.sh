@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
-# PreToolUse guardrail (Bash): enforces this repo's git workflow rules on the agent.
-#   1. Merges must be fast-forward only — block --no-ff / --squash.
-#   2. `main` is read-only while a linked worktree is open — block a direct commit/merge
-#      onto main in that state (the prescribed integration is `git merge --ff-only <branch>`).
+# PreToolUse guardrail (Bash) for solo, agent-driven development.
 #
-# Reads the PreToolUse JSON event on stdin. Exit 2 = block (stderr is shown to Claude);
+# A quality gate is only a gate if it can't be skipped. This blocks the agent from
+# bypassing the local Husky gate (lint, format, commit-msg, typecheck) with
+# `git ... --no-verify`. Everything else is allowed — there is no branch/merge/worktree
+# ceremony in this solo repo (commit straight to main).
+#
+# Reads the PreToolUse JSON event on stdin. Exit 2 = block (stderr shown to Claude);
 # exit 0 = allow. Fail-open: if anything is unparseable, allow.
 
 input="$(cat)"
@@ -27,30 +29,16 @@ fi
 # Flatten newlines and line-continuations so multi-line commands match.
 norm="$(printf '%s' "$cmd" | tr '\n\\' '  ')"
 
-block() {
-  printf 'BLOCKED by .claude/hooks/guard-git-workflow.sh\n\n%s\n\nRule: %s\n' "$1" "$2" >&2
-  exit 2
-}
-
-# Only inspect git commands.
+# Only inspect git commit / merge / push.
 printf '%s' "$norm" | grep -Eq '(^|[;&| ])git( |$)' || exit 0
+printf '%s' "$norm" | grep -Eq '\b(commit|merge|push)\b' || exit 0
 
-# Rule 1 — fast-forward-only merges.
-if printf '%s' "$norm" | grep -Eq '\bmerge\b' \
-   && printf '%s' "$norm" | grep -Eq -- '--no-ff|--squash'; then
-  block "git merge with --no-ff or --squash is not allowed." \
-        "Rebase onto main, then 'git merge --ff-only <branch>' for linear history."
-fi
-
-# Rule 2 — main is read-only while a worktree is open.
-worktrees="$(git worktree list 2>/dev/null | wc -l | tr -d ' ')"
-branch="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || true)"
-if [ "${worktrees:-1}" -gt 1 ] && [ "$branch" = "main" ]; then
-  if printf '%s' "$norm" | grep -Eq '\b(commit|merge)\b' \
-     && ! printf '%s' "$norm" | grep -Eq -- '--ff-only'; then
-    block "Direct commit/merge onto 'main' while a worktree is open." \
-          "main is read-only while any worktree exists; integrate only via 'git merge --ff-only <branch>'."
-  fi
+# Block the gate-bypass flag.
+if printf '%s' "$norm" | grep -Eq -- '--no-verify'; then
+  printf 'BLOCKED by .claude/hooks/guard-git-workflow.sh\n\n%s\n\n%s\n' \
+    '`--no-verify` would skip the Husky quality gate (lint, format, commit-msg, typecheck).' \
+    'Fix what the gate reported instead of bypassing it.' >&2
+  exit 2
 fi
 
 exit 0

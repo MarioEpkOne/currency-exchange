@@ -111,22 +111,23 @@ TypeScript uses **project references**: `tsconfig.base.json` holds the strict op
 
 ### Repository workflow & tooling
 
-- **Branch model:** `main` is the trunk and stays releasable. Do feature work on a branch/worktree,
-  rebase onto `main`, and integrate with **`git merge --ff-only`** (linear history; never `--no-ff`
-  or `--squash`). A `PreToolUse` guardrail (`.claude/hooks/guard-git-workflow.sh`) enforces this for
-  the agent (wired in `.claude/settings.json`, which the global gitignore keeps local — copy
-  `.claude/settings.json.example` to enable it in a fresh clone). The real gate is CI branch protection.
+- **Branch model (solo):** Commit **directly to `main`** — no branches, PRs, or worktrees. This is a
+  single-developer project, so it deliberately overrides the global worktree rules for _this_ repo.
+  A `PreToolUse` guardrail (`.claude/hooks/guard-git-workflow.sh`) keeps the agent honest by blocking
+  `git --no-verify`, so the local quality gate can't be silently skipped (wired in
+  `.claude/settings.json`, kept local by the global gitignore — copy `.claude/settings.json.example`
+  to re-enable in a fresh clone).
 - **Quality-gate ladder (wired):** **pre-commit** (Husky + lint-staged) runs Prettier + ESLint on
   **staged files only**; **commit-msg** enforces Conventional Commits (commitlint); **pre-push** runs
-  `pnpm typecheck`; **CI** (`.github/workflows/ci.yml`) runs the full lint + typecheck + test (+ build
-  once packages emit) and is the authoritative, non-bypassable gate — enable branch protection to
-  require it. Prettier formats, ESLint checks correctness (`eslint-config-prettier` keeps them
+  `pnpm typecheck`; **CI** (`.github/workflows/ci.yml`) re-runs the full lint + typecheck + test
+  (+ build once packages emit) on every push to `main`, as a clean-environment backstop. Prettier
+  formats, ESLint checks correctness (`eslint-config-prettier` keeps them
   separate). ESLint also enforces two invariants as errors: **`packages/core` may not import
   AWS/framework code** (§4) and **no `parseFloat` on money** (§5.1, heuristic).
-- **Secrets:** `.github/workflows/secret-scan.yml` (gitleaks) runs on every push/PR. The provider App
-  ID lives only in `.env` (gitignored) or an SST Secret — see §5.6.
-- **Docs travel with code (anti-drift):** update the affected doc layer in the **same PR** as the
-  change (`.github/pull_request_template.md` has the checklist). Layers: this file + nested
+- **Secrets:** `.github/workflows/secret-scan.yml` (gitleaks) runs on every push to `main`. The
+  provider App ID lives only in `.env` (gitignored) or an SST Secret — see §5.6.
+- **Docs travel with code (anti-drift):** update the affected doc layer in the **same commit** as the
+  change. Layers: this file + nested
   per-package `CLAUDE.md` (agents) · `README.md` (setup) · `docs/adr/` (decisions — one ADR per
   resolved §9 item) · generated OpenAPI (API contract) · CHANGELOG via Conventional Commits.
 
