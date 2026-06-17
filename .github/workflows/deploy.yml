@@ -39,6 +39,11 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      # Build the workspace packages so @currency/core/dist exists before SST bundles
+      # the Lambda handlers and the Next.js site (both import @currency/core as a
+      # package, which resolves to dist). A clean runner has no dist until this runs.
+      - run: pnpm build
+
       # Exchange the GitHub OIDC token for short-lived AWS creds by assuming the
       # deploy role. role-to-assume is a NON-secret ARN; region is a plain var.
       - name: Configure AWS credentials (OIDC)

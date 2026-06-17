@@ -32,6 +32,7 @@ set -euo pipefail
 : "${GITHUB_REPO:?Set GITHUB_REPO=owner/repo}"
 ROLE_NAME="${ROLE_NAME:-currency-exchange-gha-deploy}"
 GIT_REF="${GIT_REF:-refs/heads/main}"
+ENVIRONMENT="${ENVIRONMENT:-production}"
 POLICY_ARN="${POLICY_ARN:-arn:aws:iam::aws:policy/AdministratorAccess}"
 
 ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
@@ -65,9 +66,12 @@ TRUST_POLICY="$(cat <<JSON
       "Principal": { "Federated": "${OIDC_ARN}" },
       "Action": "sts:AssumeRoleWithWebIdentity",
       "Condition": {
-        "StringEquals": {
-          "${OIDC_HOST}:aud": "sts.amazonaws.com",
-          "${OIDC_HOST}:sub": "repo:${GITHUB_REPO}:ref:${GIT_REF}"
+        "StringEquals": { "${OIDC_HOST}:aud": "sts.amazonaws.com" },
+        "StringLike": {
+          "${OIDC_HOST}:sub": [
+            "repo:${GITHUB_REPO}:environment:${ENVIRONMENT}",
+            "repo:${GITHUB_REPO}:ref:${GIT_REF}"
+          ]
         }
       }
     }
