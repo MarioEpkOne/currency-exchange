@@ -110,14 +110,3 @@ stats) + integration tests in `packages/functions/test/` (handlers with the prov
 pnpm test          # run all tests
 pnpm test:watch    # watch mode
 ```
-
-## Case-study deliverables
-
-- [x] README with local setup (this file)
-- [x] Working REST API with validation, caching, and error handling
-- [x] Persistent DynamoDB stats (survive restarts, shared across clients)
-- [x] Next.js frontend following the Figma "Web layer"
-- [x] SST IaC: all infra as code
-- [ ] AI collaboration diary (`docs/ai-diary.md`) — a win, a failure + recovery, an override
-- [ ] Future-vision note — "If AI writes the code, what does a great engineer do?"
-- [ ] _(optional)_ rough time budget

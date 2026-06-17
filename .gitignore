@@ -40,10 +40,12 @@ yarn-error.log*
 # Claude Code — local, machine-specific overrides (shared config stays in settings.json)
 .claude/settings.local.json
 
-# Pipeline scaffolding — kept on disk for the case-study AI diary (audit→fix story), not versioned
-Working Logs/
-Implementation Plans/
-learnings.md
+# Pipeline scaffolding — usually gitignored, but as this is a case study these are
+# intentionally committed to remote (they document the AI diary / audit→fix story).
+# Uncomment to ignore them again outside the case study.
+# Working Logs/
+# Implementation Plans/
+# learnings.md
 
 # Editor / OS
 .DS_Store
