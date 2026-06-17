@@ -73,6 +73,17 @@ Settings → Environments → `production` → require a reviewer. Then every CI
   pnpm sst deploy --stage production
   ```
 
+## Provider quota guardrail (openexchangerates free plan)
+
+The free plan allows **~1,000 requests/month**. The DynamoDB cache keeps steady-state usage well
+under that: rates refresh at most hourly (~720/month) and the currency list daily (~30/month), and
+the provider is only called on a cache miss/expiry — never per request.
+
+**Operational rule:** the rate cache table is **per stage**, so each running stage spends its own
+~720 rate calls/month against the App ID. Do **not** point multiple concurrently-running stages
+(e.g. a local `sst dev` and the deployed `production`) at the **same** App ID — that doubles usage
+and can exceed the quota. Use a separate free App ID per stage, or run only one stage live at a time.
+
 ## Teardown (non-production stages only)
 
 `production` is `protect`ed and uses `removal: retain` (see `sst.config.ts`), so it will not

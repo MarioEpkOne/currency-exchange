@@ -63,9 +63,9 @@ These are the rules that make this a money app rather than a toy. Violating any 
    cache is a first-class persistent resource, not per-instance memory.
 4. **Availability over freshness.** If the provider is down but a cache exists, serve it (stale-cache
    fallback with a `stale` flag + `asOf`). Only fail (503) when there is no cache at all.
-5. **Stats writes must be concurrency-safe.** Multiple Lambdas update stats simultaneously — use
-   atomic DynamoDB `UpdateItem` with `ADD`/`SET if_not_exists` on `STATS#GLOBAL`, never
-   read-modify-write.
+5. **Stats writes must be concurrency-safe.** Multiple Lambdas update stats simultaneously — use a
+   single atomic DynamoDB `UpdateItem` with `ADD` on `STATS#GLOBAL` (per-currency frequency as flat
+   `tc_<CUR>` counters — never a nested map path, which fails on first write), never read-modify-write.
 6. **The openexchangerates App ID is a secret.** It comes from an SST Secret / env var — never
    commit it, never ship it to the frontend bundle. The browser talks to _our_ API, not the provider.
 
@@ -107,7 +107,7 @@ the `packageManager` field. Run from the repo root:
 | `pnpm format` / `pnpm format:check`          | Prettier write / check                                  |
 | `pnpm lint` / `pnpm lint:fix`                | ESLint (flat config, `eslint.config.js`)                |
 | `pnpm typecheck`                             | `tsc -b` across project references                      |
-| `pnpm test` / `pnpm test:watch`              | Vitest (95+ tests across core + functions)              |
+| `pnpm test` / `pnpm test:watch`              | Vitest (unit + integration, core + functions)           |
 | `pnpm --filter @currency/web build`          | Next.js production build                                |
 | `sst dev`                                    | Local dev stack (live-reload, proxied API)              |
 | `sst deploy`                                 | Deploy to AWS (requires credentials + secret set below) |
@@ -164,7 +164,7 @@ All five deferred items from the original `CLAUDE.md` §9 are resolved. See ADR-
 | decimal.js vs dinero.js                      | **decimal.js** with `ROUND_HALF_EVEN` (ADR-0002)                                                         |
 | Exact cache TTL                              | Rate cache: **3600s (1h)**; currency list: **86400s (24h)** (ADR-0003)                                   |
 | `from == to` toward stats?                   | **Yes — counts** (ADR-0004)                                                                              |
-| DynamoDB table/key + atomic mechanism        | Single `STATS#GLOBAL` item, `ADD`/`SET if_not_exists` (ADR-0005)                                         |
+| DynamoDB table/key + atomic mechanism        | Single `STATS#GLOBAL` item, `ADD` on flat `tc_<CUR>` counters (ADR-0005)                                 |
 | Formal request/response + error-body schemas | Typed JSON envelope `{error:{code,message,details?}}`; numeric fields as strings (ADR-0006)              |
 | Build scope                                  | Full stack in one pass (ADR-0007)                                                                        |
 | Production hardening                         | Structured+redacted logging, API throttling, CORS allowlist, security headers, least-priv IAM (ADR-0008) |

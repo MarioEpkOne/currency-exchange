@@ -180,14 +180,16 @@ artifacts:
 
 **Product / code**
 
-- [ ] A working **REST conversion API** on AWS Lambda using **live rates**, with input
+- [x] A working **REST conversion API** on AWS Lambda using **live rates**, with input
       **validation**, **rate caching**, and meaningful **error handling**.
-- [ ] **Persistent conversion stats** in DynamoDB that **survive restarts** and are **shared across
+- [x] **Persistent conversion stats** in DynamoDB that **survive restarts** and are **shared across
       clients**.
-- [ ] A **Next.js frontend** following the **Figma "Web layer"** design, consuming the API and
+- [x] A **Next.js frontend** following the **Figma "Web layer"** design, consuming the API and
       **displaying the stats**.
-- [ ] **Deployed live URL** (bonus) with **all infrastructure as code via SST** (bonus).
-- [ ] **Unit + integration tests** in **Vitest** (conversion math and cache logic; handlers with
+- [x] **Deployed live URL** (bonus) with **all infrastructure as code via SST** (bonus).
+      Live: Web `https://dqgxfioaxo6x7.cloudfront.net`, API
+      `https://q8vdmae029.execute-api.eu-central-1.amazonaws.com` (`eu-central-1`).
+- [x] **Unit + integration tests** in **Vitest** (conversion math and cache logic; handlers with
       the external provider mocked).
 
 **Non-code deliverables (required by the case study)**

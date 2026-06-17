@@ -1,7 +1,7 @@
 /// <reference path="./.sst/platform/config.d.ts" />
 
-// SST Ion configuration — requires `sst install` to generate
-// the .sst/platform/config.d.ts type file before `pnpm typecheck` sees this.
+// SST v4 configuration. The .sst/platform/config.d.ts type file is generated on the
+// first `sst` run (e.g. `sst dev`/`sst deploy`) before `pnpm typecheck` sees this.
 //
 // Deploy: sst secret set OpenExchangeRatesAppId <your-id>
 //         sst deploy

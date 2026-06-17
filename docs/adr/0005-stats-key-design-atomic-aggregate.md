@@ -10,8 +10,8 @@ Stats must be shared across all Lambda invocations (multiple concurrent instance
 restarts. The main challenge is concurrent writes — multiple Lambdas can process conversions
 simultaneously and must update a shared aggregate without racing.
 
-DynamoDB supports atomic `UpdateItem` with expression-based arithmetic (`ADD`, `SET if_not_exists`),
-which is concurrency-safe by construction. The alternative — read-modify-write — is not.
+DynamoDB supports atomic `UpdateItem` with expression-based arithmetic (e.g. `ADD`), which is
+concurrency-safe by construction. The alternative — read-modify-write — is not.
 
 ## Decision
 
@@ -43,9 +43,11 @@ lexicographically smallest code (deterministic).
 
 - All concurrent writes are safe — each UpdateItem is atomic.
 - No read-modify-write; no optimistic-locking retry loop needed.
-- `totalSumUSD` is stored as a DynamoDB `Number` (decimal-string precision via `ADD`); read back
-  wrapped in `Decimal` for formatting.
-- `targetCounts` is a DynamoDB Map attribute updated with `SET if_not_exists ... + :one`.
+- `totalSumUSD` is stored as a DynamoDB `Number` (decimal-string precision via `ADD`); read back as
+  its raw decimal string (low-level `GetItem`) and wrapped in `Decimal` for formatting — no float.
+- Per-currency frequency is stored as flat top-level `tc_<CUR>` attributes incremented via `ADD`, and
+  reconstructed into a `{ CUR: count }` map on read by `getStats` (NOT a nested map — see the note
+  above on why the nested path fails on first write).
 - `topCurrency` computation adds a tiny in-app cost on each `/api/stats` read; acceptable.
 
 ## Alternatives considered

@@ -4,8 +4,14 @@ A deployed, serverless currency converter: enter an amount and a source currency
 currency, and get an accurate result backed by **live exchange rates** — plus usage statistics that
 persist across sessions and clients. Built for the Purple LAB "Backend Developer 2026" case study.
 
-> **Status: full stack implemented.** API, frontend, DynamoDB, and SST infra are all present.
-> Deploy with `sst deploy` after setting the App ID secret (see Local Setup below).
+> **Status: live in production.** API, frontend, DynamoDB, and SST infra are deployed to AWS
+> (`eu-central-1`).
+>
+> - **Web:** https://dqgxfioaxo6x7.cloudfront.net
+> - **API:** https://q8vdmae029.execute-api.eu-central-1.amazonaws.com
+>   (`/api/convert?from=&to=&amount=`, `/api/currencies`, `/api/stats`)
+>
+> Redeploy with `pnpm sst deploy --stage production` after setting the App ID secret (see Deploy below).
 
 ## Documentation map
 
@@ -86,7 +92,7 @@ pnpm format:check         # Prettier check (CI)
 pnpm lint                 # ESLint
 pnpm lint:fix             # ESLint autofix
 pnpm typecheck            # tsc -b (core + functions)
-pnpm test                 # Vitest (95+ tests)
+pnpm test                 # Vitest (unit + integration)
 pnpm --filter @currency/web build  # Next.js production build
 ```
 
