@@ -58,4 +58,17 @@ describe('/stats handler', () => {
     const body = JSON.parse(res.body as string) as { topCurrency: string };
     expect(body.topCurrency).toBe('AUD');
   });
+
+  it('unexpected error (non-AppError) → 500 INTERNAL, generic message, no stack leak', async () => {
+    vi.mocked(dynamo.getStats).mockRejectedValue(new Error('DynamoDB exploded: secret internals'));
+    const res = await handler(makeEvent());
+    expect(res.statusCode).toBe(500);
+    const body = JSON.parse(res.body as string) as {
+      error: { code: string; message: string; stack?: string };
+    };
+    expect(body.error.code).toBe('INTERNAL');
+    // Must not leak the raw internal error message or a stack trace
+    expect(body.error.message).not.toContain('secret internals');
+    expect(body.error.stack).toBeUndefined();
+  });
 });
