@@ -1,0 +1,19 @@
+version: 2
+updates:
+  # JS dependencies (Dependabot reads pnpm-lock.yaml via the npm ecosystem).
+  - package-ecosystem: npm
+    directory: '/'
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      # Collapse all minor/patch bumps into a single PR to minimise noise.
+      all-minor-patch:
+        patterns: ['*']
+        update-types: [minor, patch]
+  # Keep GitHub Actions pinned versions fresh.
+  - package-ecosystem: github-actions
+    directory: '/'
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5

@@ -15,6 +15,7 @@ persist across sessions and clients. Built for the Purple LAB "Backend Developer
 | **Humans — vision**       | [`GOAL.md`](./GOAL.md) — north-star / definition of done                      |
 | **Humans — decisions**    | [`docs/adr/`](./docs/adr) — Architecture Decision Records                     |
 | **API contract**          | _TODO_: OpenAPI at `/api/openapi.json`, generated from the validation schemas |
+| **Security**              | [`docs/security.md`](./docs/security.md) — threat model & control checklist   |
 
 ## Architecture (summary)
 

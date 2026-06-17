@@ -63,6 +63,8 @@ These are the rules that make this a money app rather than a toy. Violating any 
 6. **The openexchangerates App ID is a secret.** It comes from an SST Secret / env var — never
    commit it, never ship it to the frontend bundle. The browser talks to _our_ API, not the provider.
 
+> Threat model + control checklist: [`docs/security.md`](docs/security.md).
+
 ## 6. Core behavior & edge cases (authoritative — `GOAL.md` §6, spec Edge Cases table)
 
 Three REST endpoints: `GET /api/convert?from=&to=&amount=`, `GET /api/currencies`, `GET /api/stats`.
@@ -129,7 +131,15 @@ TypeScript uses **project references**: `tsconfig.base.json` holds the strict op
 - **Docs travel with code (anti-drift):** update the affected doc layer in the **same commit** as the
   change. Layers: this file + nested
   per-package `CLAUDE.md` (agents) · `README.md` (setup) · `docs/adr/` (decisions — one ADR per
-  resolved §9 item) · generated OpenAPI (API contract) · CHANGELOG via Conventional Commits.
+  resolved §9 item) · `docs/security.md` (threat model) · generated OpenAPI (API contract) ·
+  CHANGELOG via Conventional Commits.
+
+### Up-to-date library docs (Context7)
+
+Before writing or debugging against a fast-moving dependency, pull current docs via the **Context7**
+MCP — training data lags these. Especially **SST v3 (Ion)** (infra API differs a lot from v2),
+**AWS SDK for JS v3** (DynamoDB client/commands), **Next.js App Router**, **Zod**, and the chosen
+decimal library. Prefer Context7 over assuming an API.
 
 ## 9. Deferred decisions (resolve in an implementation spec, then record here)
 
