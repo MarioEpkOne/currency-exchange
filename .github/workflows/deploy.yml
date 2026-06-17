@@ -31,7 +31,7 @@ jobs:
           # Check out the exact commit CI validated, not whatever main is now.
           ref: ${{ github.event.workflow_run.head_sha }}
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
