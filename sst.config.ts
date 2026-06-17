@@ -46,13 +46,18 @@ export default $config({
     // Defined before the site so api.url is available for the site's
     // NEXT_PUBLIC_API_URL env var. Routes are wired after the functions are defined.
     const api = new sst.aws.ApiGatewayV2('Api', {
-      // CORS is owned by the Lambda layer (respond.ts), which echoes an allowlisted
-      // origin per request (the deployed site via CORS_ALLOW_ORIGIN + localhost:3000) —
-      // never a wildcard. Gateway-managed CORS is disabled because it would otherwise
-      // STRIP the Lambda's Access-Control-Allow-Origin header, and it cannot reference
-      // site.url here (the site is defined after the api so it can consume api.url).
-      // All routes are simple GETs, so no browser preflight is required.
-      cors: false,
+      // CORS MUST be managed by the gateway: an AWS HTTP API strips Access-Control-*
+      // headers returned by the Lambda, so respond.ts cannot own CORS here. We use an
+      // explicit allowlist (never a wildcard). The deployed site origin is hard-listed
+      // because it cannot be referenced as `site.url` at this point — the site is
+      // defined AFTER the api so it can consume `api.url` (NEXT_PUBLIC_API_URL), which
+      // would otherwise create a cycle. The CloudFront origin is stable across deploys;
+      // with a custom domain you would list that domain here instead.
+      cors: {
+        allowOrigins: ['https://dqgxfioaxo6x7.cloudfront.net', 'http://localhost:3000'],
+        allowMethods: ['GET', 'OPTIONS'],
+        allowHeaders: ['Content-Type'],
+      },
       throttle: {
         // 20 rps steady-state, 40 burst — tune as needed.
         rate: 20,
