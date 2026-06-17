@@ -1,4 +1,4 @@
-import { DynamoDBClient, UpdateItemCommand } from '@aws-sdk/client-dynamodb';
+import { DynamoDBClient, UpdateItemCommand, GetItemCommand } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, GetCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
 import type { RatesMap, CurrencyList, RateSnapshot } from '@currency/core';
 import { RATE_TTL_SECONDS, CURRENCY_TTL_SECONDS } from '@currency/core';
@@ -112,21 +112,26 @@ export async function recordConversion(
   toCurrency: string,
   usdValueDecimalString: string,
 ): Promise<void> {
-  // Use the low-level UpdateItemCommand (not DocumentClient) so the USD value is
-  // supplied as a raw DynamoDB Number string { N: "..." } — never coerced through
-  // a JS native float (which would violate Constraint #1: no native-float money).
+  // Single atomic UpdateItem. Per-currency frequency is stored as a TOP-LEVEL
+  // attribute `tc_<CUR>` incremented with ADD — NOT as a key inside a nested map.
+  //
+  // Why not `SET targetCounts.#cur = ...`: on the first ever write the parent map
+  // `targetCounts` does not exist, and DynamoDB rejects a nested document path whose
+  // parent is missing (ValidationException: "document path ... invalid for update"),
+  // so the whole update fails and stats never persist. ADD creates the item and the
+  // attribute atomically, so it is correct on the first write and concurrency-safe
+  // (no read-modify-write). The USD value is passed as a raw { N: string } so it is
+  // never coerced through a JS native float (Constraint #1: no native-float money).
   await ddbClient.send(
     new UpdateItemCommand({
       TableName: STATS_TABLE,
       Key: { PK: { S: 'STATS#GLOBAL' } },
-      UpdateExpression:
-        'ADD totalCount :one, totalSumUSD :usd SET targetCounts.#cur = if_not_exists(targetCounts.#cur, :zero) + :one',
+      UpdateExpression: 'ADD totalCount :one, totalSumUSD :usd, #tc :one',
       ExpressionAttributeNames: {
-        '#cur': toCurrency,
+        '#tc': `tc_${toCurrency}`,
       },
       ExpressionAttributeValues: {
         ':one': { N: '1' },
-        ':zero': { N: '0' },
         // Decimal string passed directly — full precision, no float coercion
         ':usd': { N: usdValueDecimalString },
       },
@@ -140,21 +145,33 @@ export async function recordConversion(
  */
 export async function getStats(): Promise<{
   totalCount?: number;
-  totalSumUSD?: string | number;
+  totalSumUSD?: string;
   targetCounts?: Record<string, number>;
 } | null> {
-  const result = await docClient.send(
-    new GetCommand({
+  // Low-level GetItem (not DocumentClient) so the money sum is read as its raw
+  // decimal string and NOT unmarshaled through a JS float. Per-currency counters
+  // are reconstructed from the top-level `tc_<CUR>` attributes written by
+  // recordConversion back into the { CUR: count } map the core layer expects.
+  const result = await ddbClient.send(
+    new GetItemCommand({
       TableName: STATS_TABLE,
-      Key: { PK: 'STATS#GLOBAL' },
+      Key: { PK: { S: 'STATS#GLOBAL' } },
     }),
   );
 
   if (!result.Item) return null;
 
-  return result.Item as {
-    totalCount?: number;
-    totalSumUSD?: string | number;
-    targetCounts?: Record<string, number>;
-  };
+  const item = result.Item;
+  const totalCount = item['totalCount']?.N !== undefined ? Number(item['totalCount'].N) : 0;
+  // Kept as the raw decimal string — exact, no float coercion.
+  const totalSumUSD = item['totalSumUSD']?.N ?? '0';
+
+  const targetCounts: Record<string, number> = {};
+  for (const [key, value] of Object.entries(item)) {
+    if (key.startsWith('tc_') && value.N !== undefined) {
+      targetCounts[key.slice(3)] = Number(value.N);
+    }
+  }
+
+  return { totalCount, totalSumUSD, targetCounts };
 }

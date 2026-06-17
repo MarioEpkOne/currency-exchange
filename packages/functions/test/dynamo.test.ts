@@ -17,7 +17,7 @@ vi.mock('@aws-sdk/lib-dynamodb', async (importOriginal) => {
 });
 
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { recordConversion } from '../src/lib/dynamo.js';
+import { recordConversion, getStats } from '../src/lib/dynamo.js';
 
 describe('recordConversion — no native-float precision loss', () => {
   let sendSpy: ReturnType<typeof vi.spyOn>;
@@ -54,5 +54,58 @@ describe('recordConversion — no native-float precision loss', () => {
     const values = command.input.ExpressionAttributeValues ?? {};
 
     expect((values[':usd'] as { N: string }).N).toBe(preciseUsd);
+  });
+});
+
+describe('recordConversion — atomic flat counter, no nested map path', () => {
+  let sendSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    sendSpy = vi.spyOn(DynamoDBClient.prototype, 'send').mockResolvedValue({} as never);
+  });
+
+  it('increments a top-level tc_<CUR> attribute with ADD (no targetCounts.<x> path)', async () => {
+    // The nested `SET targetCounts.#cur` form fails on the first write because the
+    // parent map does not exist — this guards against that regression.
+    await recordConversion('EUR', '12.34');
+
+    const command = sendSpy.mock.calls[0]?.[0] as UpdateItemCommand;
+    const expr = command.input.UpdateExpression ?? '';
+
+    expect(expr).toContain('ADD');
+    expect(expr).not.toContain('targetCounts');
+    expect(command.input.ExpressionAttributeNames?.['#tc']).toBe('tc_EUR');
+  });
+});
+
+describe('getStats — reconstructs targetCounts, keeps money exact', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('returns null when the aggregate item does not exist', async () => {
+    vi.spyOn(DynamoDBClient.prototype, 'send').mockResolvedValue({} as never);
+
+    expect(await getStats()).toBeNull();
+  });
+
+  it('rebuilds { CUR: count } from tc_ attributes and reads totalSumUSD as an exact string', async () => {
+    vi.spyOn(DynamoDBClient.prototype, 'send').mockResolvedValue({
+      Item: {
+        PK: { S: 'STATS#GLOBAL' },
+        totalCount: { N: '3' },
+        // 16+ significant digits — must survive as a string, never a JS float
+        totalSumUSD: { N: '12345678901234.56' },
+        tc_EUR: { N: '2' },
+        tc_JPY: { N: '1' },
+      },
+    } as never);
+
+    expect(await getStats()).toEqual({
+      totalCount: 3,
+      totalSumUSD: '12345678901234.56',
+      targetCounts: { EUR: 2, JPY: 1 },
+    });
   });
 });

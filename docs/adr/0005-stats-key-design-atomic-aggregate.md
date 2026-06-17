@@ -16,18 +16,28 @@ which is concurrency-safe by construction. The alternative — read-modify-write
 ## Decision
 
 We will use a **single aggregate item** with `PK = 'STATS#GLOBAL'` in the `Stats` table, updated
-with one atomic `UpdateItem` per successful conversion:
+with one atomic `UpdateItem` per successful conversion. Per-currency frequency is stored as
+**top-level `tc_<CUR>` attributes** incremented with `ADD` (not as keys inside a nested map):
 
 ```
-UpdateExpression:
-  ADD totalCount :one, totalSumUSD :usd
-  SET targetCounts.#cur = if_not_exists(targetCounts.#cur, :zero) + :one
-ExpressionAttributeNames:  { '#cur': <TO currency> }
-ExpressionAttributeValues: { ':one': 1, ':zero': 0, ':usd': <usdValue as Number> }
+UpdateExpression:           ADD totalCount :one, totalSumUSD :usd, #tc :one
+ExpressionAttributeNames:   { '#tc': 'tc_' + <TO currency> }
+ExpressionAttributeValues:  { ':one': {N:'1'}, ':usd': {N: <usdValue decimal string>} }
 ```
 
-`topCurrency` (argmax of `targetCounts`) is computed in-app by `packages/core/src/stats.ts`
-after reading the item. Tie-break is lexicographically smallest code (deterministic).
+`topCurrency` (argmax) is computed in-app by `packages/core/src/stats.ts`; `getStats` rebuilds the
+`{ CUR: count }` map from the `tc_*` attributes before handing it to core. Tie-break is
+lexicographically smallest code (deterministic).
+
+> **Why flat `tc_<CUR>` attributes, not a nested `targetCounts` map** (revised 2026-06-17 after the
+> first live deploy): the original design used `SET targetCounts.#cur = if_not_exists(targetCounts.#cur, :zero) + :one`.
+> That fails on the **first ever write** — DynamoDB rejects a nested document path whose parent map
+> does not yet exist (`ValidationException: document path ... invalid for update`), so the whole
+> atomic update fails and stats never persist. Mocked unit tests did not catch it (a mock does not
+> enforce DynamoDB path semantics); a live smoke test did. Top-level `ADD` creates the item and the
+> attribute atomically, so it is correct on the first write and remains a single concurrency-safe
+> `UpdateItem`. The money sum is also **read** as its raw decimal string (low-level `GetItem`), never
+> unmarshaled through a JS float.
 
 ## Consequences
 
