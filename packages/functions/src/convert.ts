@@ -3,6 +3,7 @@ import { randomUUID } from 'crypto';
 import {
   cacheState,
   parseConvertRequest,
+  validateConvertShape,
   convert as coreConvert,
   usdValue,
   supportedFromRates,
@@ -21,6 +22,17 @@ export const handler = async (event: APIGatewayProxyEventV2): Promise<APIGateway
   const query = event.queryStringParameters ?? {};
 
   try {
+    // 0. Validate input shape FIRST (presence, format, amount range).
+    // This must run before any rate-loading so that malformed requests always
+    // return 400, even when there is no cache and the provider is down (Edge Cases
+    // table: bad input → 400 unconditionally, regardless of cache state).
+    // Currency membership is checked later in step 2, once rates are available.
+    validateConvertShape({
+      from: query['from'],
+      to: query['to'],
+      amount: query['amount'],
+    });
+
     // 1. Load rate snapshot from cache
     const snapshot = await dynamo.getRateSnapshot();
     const state = cacheState(snapshot?.fetchedAt ?? null, RATE_TTL_SECONDS, Date.now());

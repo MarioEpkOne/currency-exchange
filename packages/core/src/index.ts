@@ -29,7 +29,7 @@ export { Decimal, CURRENCY_DP, dpFor, roundToCurrency, formatMoney } from './mon
 export { isWellFormedCode, isSupported, supportedFromRates } from './currencies.js';
 
 // Validation
-export { parseConvertRequest } from './validate.js';
+export { parseConvertRequest, validateConvertShape } from './validate.js';
 
 // Conversion
 export { rateBetween, convert, usdValue } from './convert.js';

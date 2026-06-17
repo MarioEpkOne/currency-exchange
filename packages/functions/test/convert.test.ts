@@ -180,6 +180,42 @@ describe('/convert handler — 400 validation errors', () => {
   });
 });
 
+describe('/convert handler — validation precedes 503 (no cache + provider down)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(dynamo.getRateSnapshot).mockResolvedValue(null);
+    vi.mocked(provider.fetchLatest).mockRejectedValue(new AppError('PROVIDER_ERROR', 502, 'down'));
+  });
+
+  it('no-cache + provider-down + missing amount → 400, not 503', async () => {
+    const res = await handler(makeEvent({ from: 'USD', to: 'EUR' }));
+    expect(res.statusCode).toBe(400);
+    const body = JSON.parse(res.body as string) as { error: { code: string } };
+    expect(body.error.code).toBe('MISSING_PARAM');
+  });
+
+  it('no-cache + provider-down + bad amount → 400, not 503', async () => {
+    const res = await handler(makeEvent({ from: 'USD', to: 'EUR', amount: 'abc' }));
+    expect(res.statusCode).toBe(400);
+    const body = JSON.parse(res.body as string) as { error: { code: string } };
+    expect(body.error.code).toBe('INVALID_AMOUNT');
+  });
+
+  it('no-cache + provider-down + missing from → 400, not 503', async () => {
+    const res = await handler(makeEvent({ to: 'EUR', amount: '100' }));
+    expect(res.statusCode).toBe(400);
+    const body = JSON.parse(res.body as string) as { error: { code: string } };
+    expect(body.error.code).toBe('MISSING_PARAM');
+  });
+
+  it('no-cache + provider-down + valid params → 503 NO_RATES_AVAILABLE (unchanged)', async () => {
+    const res = await handler(makeEvent({ from: 'USD', to: 'EUR', amount: '100' }));
+    expect(res.statusCode).toBe(503);
+    const body = JSON.parse(res.body as string) as { error: { code: string } };
+    expect(body.error.code).toBe('NO_RATES_AVAILABLE');
+  });
+});
+
 describe('/convert handler — stats write', () => {
   beforeEach(() => {
     vi.clearAllMocks();

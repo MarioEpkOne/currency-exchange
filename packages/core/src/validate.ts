@@ -93,4 +93,73 @@ export function parseConvertRequest(
   return { from, to, amount: amountDecimal };
 }
 
+/**
+ * Validate only the shape of a convert request: presence, format, and amount range.
+ * Does NOT check whether from/to are in the supported currency set — that requires
+ * rates to be loaded, and must happen in a second pass via parseConvertRequest.
+ *
+ * Call this BEFORE loading rates so that MISSING_PARAM / INVALID_AMOUNT errors are
+ * returned as 400 even when there is no cache and the provider is down (preventing
+ * NO_RATES_AVAILABLE from pre-empting a well-formed 400).
+ *
+ * Throws AppError on any validation failure.
+ */
+export function validateConvertShape(raw: {
+  from?: string | undefined;
+  to?: string | undefined;
+  amount?: string | undefined;
+}): void {
+  const parsedRaw = rawSchema.safeParse(raw);
+  if (!parsedRaw.success) {
+    throw missingParam('from');
+  }
+
+  const { from, to, amount } = parsedRaw.data;
+
+  // Presence checks
+  if (from === undefined || from.trim() === '') {
+    throw missingParam('from');
+  }
+  if (to === undefined || to.trim() === '') {
+    throw missingParam('to');
+  }
+  if (amount === undefined || amount.trim() === '') {
+    throw missingParam('amount');
+  }
+
+  // Format checks (well-formed currency code, not membership)
+  if (!isWellFormedCode(from)) {
+    throw unsupportedCurrency(from);
+  }
+  if (!isWellFormedCode(to)) {
+    throw unsupportedCurrency(to);
+  }
+
+  // Amount validation
+  let amountDecimal: Decimal;
+  try {
+    amountDecimal = new Decimal(amount);
+  } catch {
+    throw invalidAmount(`"${amount}" is not a valid number`);
+  }
+
+  if (!amountDecimal.isFinite()) {
+    throw invalidAmount(`"${amount}" must be a finite number (NaN and Infinity are not allowed)`);
+  }
+
+  if (amountDecimal.lte(0)) {
+    throw invalidAmount(
+      `"${amount}" must be greater than zero (negative and zero amounts are not allowed)`,
+    );
+  }
+
+  if (amountDecimal.gt(MAX_AMOUNT)) {
+    throw invalidAmount(`"${amount}" exceeds the maximum allowed amount (1e15)`);
+  }
+
+  if (amountDecimal.sd(true) > MAX_SIG_DIGITS) {
+    throw invalidAmount(`"${amount}" has too many significant digits (max 20)`);
+  }
+}
+
 export { AppError };

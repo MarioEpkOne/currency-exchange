@@ -1,6 +1,6 @@
 /// <reference path="./.sst/platform/config.d.ts" />
 
-// SST v3 (Ion) configuration — requires `sst install` to generate
+// SST Ion configuration — requires `sst install` to generate
 // the .sst/platform/config.d.ts type file before `pnpm typecheck` sees this.
 //
 // Deploy: sst secret set OpenExchangeRatesAppId <your-id>
@@ -42,7 +42,42 @@ export default $config({
       primaryIndex: { hashKey: 'PK' },
     });
 
+    // ── API Gateway ──────────────────────────────────────────────────────────
+    // Defined before the site so api.url is available for the site's
+    // NEXT_PUBLIC_API_URL env var. Routes are wired after the functions are defined.
+    const api = new sst.aws.ApiGatewayV2('Api', {
+      cors: {
+        // Allowlist: localhost:3000 for local dev.
+        // The deployed site origin is allowlisted at the Lambda level via
+        // CORS_ALLOW_ORIGIN (set on each function below, referencing site.url).
+        allowOrigins: ['http://localhost:3000'],
+        allowMethods: ['GET', 'OPTIONS'],
+        allowHeaders: ['Content-Type'],
+      },
+      throttle: {
+        // 20 rps steady-state, 40 burst — tune as needed.
+        rate: 20,
+        burst: 40,
+      },
+    });
+
+    // ── Next.js Site ─────────────────────────────────────────────────────────
+    // Defined before the Lambda functions so that site.url (an Output<string>)
+    // can be referenced in each function's CORS_ALLOW_ORIGIN environment variable
+    // without a use-before-assignment self-reference.
+    // The web app is linked to the API URL only — no table/secret access.
+    const site = new sst.aws.Nextjs('Web', {
+      path: 'web',
+      environment: {
+        // NEXT_PUBLIC_API_URL is read by web/lib/api.ts
+        NEXT_PUBLIC_API_URL: api.url,
+      },
+    });
+
     // ── Lambda Functions ─────────────────────────────────────────────────────
+    // Defined after the site so site.url can be injected as CORS_ALLOW_ORIGIN.
+    // CORS_ALLOW_ORIGIN is read by respond.ts in each function — it must live in
+    // the function environment, not the site environment.
     // Each function gets ONLY the permissions it needs (no wildcards).
 
     const convertFn = new sst.aws.Function('ConvertFunction', {
@@ -55,6 +90,7 @@ export default $config({
       environment: {
         RATE_CACHE_TABLE: rateCacheTable.name,
         STATS_TABLE: statsTable.name,
+        CORS_ALLOW_ORIGIN: site.url,
       },
     });
 
@@ -66,6 +102,7 @@ export default $config({
       ],
       environment: {
         RATE_CACHE_TABLE: rateCacheTable.name,
+        CORS_ALLOW_ORIGIN: site.url,
       },
     });
 
@@ -76,40 +113,14 @@ export default $config({
       ],
       environment: {
         STATS_TABLE: statsTable.name,
-      },
-    });
-
-    // ── API Gateway ──────────────────────────────────────────────────────────
-    const api = new sst.aws.ApiGatewayV2('Api', {
-      cors: {
-        // Allowlist: deployed site origin injected at deploy time.
-        // localhost:3000 included for local dev.
-        allowOrigins: ['http://localhost:3000'],
-        allowMethods: ['GET', 'OPTIONS'],
-        allowHeaders: ['Content-Type'],
-      },
-      throttle: {
-        // 20 rps steady-state, 40 burst — tune as needed.
-        rate: 20,
-        burst: 40,
-      },
-    });
-
-    api.route('GET /api/convert', convertFn.arn);
-    api.route('GET /api/currencies', currenciesFn.arn);
-    api.route('GET /api/stats', statsFn.arn);
-
-    // ── Next.js Site ─────────────────────────────────────────────────────────
-    // The web app is linked to the API URL only — no table/secret access.
-    const site = new sst.aws.Nextjs('Web', {
-      path: 'web',
-      environment: {
-        // NEXT_PUBLIC_API_URL is read by web/lib/api.ts
-        NEXT_PUBLIC_API_URL: api.url,
-        // Allowlist the deployed site origin for CORS in the functions
         CORS_ALLOW_ORIGIN: site.url,
       },
     });
+
+    // Wire API routes (after functions are defined)
+    api.route('GET /api/convert', convertFn.arn);
+    api.route('GET /api/currencies', currenciesFn.arn);
+    api.route('GET /api/stats', statsFn.arn);
 
     return {
       api: api.url,

@@ -1,10 +1,5 @@
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import {
-  DynamoDBDocumentClient,
-  GetCommand,
-  PutCommand,
-  UpdateCommand,
-} from '@aws-sdk/lib-dynamodb';
+import { DynamoDBClient, UpdateItemCommand } from '@aws-sdk/client-dynamodb';
+import { DynamoDBDocumentClient, GetCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
 import type { RatesMap, CurrencyList, RateSnapshot } from '@currency/core';
 import { RATE_TTL_SECONDS, CURRENCY_TTL_SECONDS } from '@currency/core';
 
@@ -117,19 +112,23 @@ export async function recordConversion(
   toCurrency: string,
   usdValueDecimalString: string,
 ): Promise<void> {
-  await docClient.send(
-    new UpdateCommand({
+  // Use the low-level UpdateItemCommand (not DocumentClient) so the USD value is
+  // supplied as a raw DynamoDB Number string { N: "..." } — never coerced through
+  // a JS native float (which would violate Constraint #1: no native-float money).
+  await ddbClient.send(
+    new UpdateItemCommand({
       TableName: STATS_TABLE,
-      Key: { PK: 'STATS#GLOBAL' },
+      Key: { PK: { S: 'STATS#GLOBAL' } },
       UpdateExpression:
         'ADD totalCount :one, totalSumUSD :usd SET targetCounts.#cur = if_not_exists(targetCounts.#cur, :zero) + :one',
       ExpressionAttributeNames: {
         '#cur': toCurrency,
       },
       ExpressionAttributeValues: {
-        ':one': 1,
-        ':zero': 0,
-        ':usd': Number(usdValueDecimalString),
+        ':one': { N: '1' },
+        ':zero': { N: '0' },
+        // Decimal string passed directly — full precision, no float coercion
+        ':usd': { N: usdValueDecimalString },
       },
     }),
   );
