@@ -26,7 +26,7 @@ jobs:
     # approval before a production deploy. Configure under Settings > Environments.
     environment: production
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           # Check out the exact commit CI validated, not whatever main is now.
           ref: ${{ github.event.workflow_run.head_sha }}
