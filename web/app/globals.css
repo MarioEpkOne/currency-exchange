@@ -120,6 +120,12 @@ select:focus {
   margin-bottom: 1.125rem;
 }
 
+/* The row owns the vertical spacing; the fields inside must not add their own,
+   or the asymmetric margin (From vs. last-child To) misaligns the two selects. */
+.currency-row .field {
+  margin-bottom: 0;
+}
+
 .select-wrap {
   position: relative;
 }
