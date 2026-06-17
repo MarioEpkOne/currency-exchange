@@ -1,0 +1,12 @@
+# Generated / vendored
+pnpm-lock.yaml
+**/dist/**
+**/build/**
+**/.next/**
+**/.open-next/**
+**/coverage/**
+**/.sst/**
+
+# Frozen vision artifacts — authored deliberately, leave formatting as-is
+GOAL.md
+specs/

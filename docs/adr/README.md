@@ -1,7 +1,7 @@
 # Architecture Decision Records
 
 We record every significant, hard-to-reverse decision as an ADR — a short, immutable note capturing
-the context, the decision, and its consequences. ADRs are the human-readable history of *why* the
+the context, the decision, and its consequences. ADRs are the human-readable history of _why_ the
 system is the way it is.
 
 ## When to write one

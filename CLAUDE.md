@@ -1,12 +1,8 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
 ## 1. Keep this file updated (do this first, every time)
 
 **Before finishing any task, update this CLAUDE.md.** It is the project's living memory. The repo
-is greenfield, so most of what follows describes *intended* structure — as real code lands, this
-file drifts from reality unless you maintain it. On every change that affects how the codebase is
+is early-stage (toolchain in, app code pending), so much of what follows describes _intended_
+structure — as real code lands, this file drifts from reality unless you maintain it. On every change that affects how the codebase is
 built, run, tested, or structured:
 
 - Replace "intended / planned" notes with the real commands once `package.json` / `sst.config.ts` exist.
@@ -15,10 +11,11 @@ built, run, tested, or structured:
 
 ## 2. Project status
 
-**Greenfield.** Only `GOAL.md` (north-star vision) and `specs/` exist. No source, no `package.json`,
-no git repo yet. `GOAL.md` is the authoritative source of intent; `specs/` holds detailed,
-interview-driven specs. When `GOAL.md` and code disagree, treat it as drift and reconcile (usually
-update this file + the code, not the vision).
+**Toolchain in, app code not yet.** The repo is git-initialized with the full quality gate wired
+(see §8). `GOAL.md` (north-star vision) and `specs/` define intent. No app code exists yet —
+`packages/`, `web/`, and `sst.config.ts` are still to come. `GOAL.md` is the authoritative source of
+intent; when it and code disagree, treat it as drift and reconcile (usually update this file + the
+code, not the vision).
 
 ## 3. What this is
 
@@ -64,22 +61,22 @@ These are the rules that make this a money app rather than a toy. Violating any 
 5. **Stats writes must be concurrency-safe.** Multiple Lambdas update stats simultaneously — use
    atomic DynamoDB updates (e.g. `ADD`), never read-modify-write.
 6. **The openexchangerates App ID is a secret.** It comes from an SST Secret / env var — never
-   commit it, never ship it to the frontend bundle. The browser talks to *our* API, not the provider.
+   commit it, never ship it to the frontend bundle. The browser talks to _our_ API, not the provider.
 
 ## 6. Core behavior & edge cases (authoritative — `GOAL.md` §6, spec Edge Cases table)
 
 Three REST endpoints: `GET /api/convert?from=&to=&amount=`, `GET /api/currencies`, `GET /api/stats`.
 
-| Scenario | Required behavior |
-|----------|-------------------|
-| `from`/`to` not a supported currency | **400** with a meaningful message |
-| `amount` missing / non-numeric / negative / zero | **400** (negative and zero are rejected) |
-| `from == to` | Return amount unchanged, rate `1` — still a valid conversion |
-| Provider down, **cache within TTL** | Serve cached rates, `stale: false` |
-| Provider down, **cache expired** | Serve last-good rates, `stale: true` + `asOf`, **HTTP 200** |
-| Provider down, **no cache at all** | **503** — cannot convert without ever having had rates |
-| Currency-list provider call fails | Serve cached currency list if available; degrade gracefully |
-| Non-2-dp currency (e.g. JPY) | Round to that currency's dp via the decimal library |
+| Scenario                                         | Required behavior                                            |
+| ------------------------------------------------ | ------------------------------------------------------------ |
+| `from`/`to` not a supported currency             | **400** with a meaningful message                            |
+| `amount` missing / non-numeric / negative / zero | **400** (negative and zero are rejected)                     |
+| `from == to`                                     | Return amount unchanged, rate `1` — still a valid conversion |
+| Provider down, **cache within TTL**              | Serve cached rates, `stale: false`                           |
+| Provider down, **cache expired**                 | Serve last-good rates, `stale: true` + `asOf`, **HTTP 200**  |
+| Provider down, **no cache at all**               | **503** — cannot convert without ever having had rates       |
+| Currency-list provider call fails                | Serve cached currency list if available; degrade gracefully  |
+| Non-2-dp currency (e.g. JPY)                     | Round to that currency's dp via the decimal library          |
 
 `/convert` responses carry the converted amount, the **rate used**, an **`asOf`** timestamp, and a
 **`stale`** flag.
@@ -90,17 +87,27 @@ Persisted in DynamoDB (survive restarts, shared across clients — this is what 
 most frequently used **target** currency, **total sum** of all conversions normalized to **USD**,
 and **total count** of conversions. Surfaced in the Next.js UI.
 
-## 8. Commands (planned — fill in once scaffolded)
+## 8. Commands & tooling
 
-No build tooling exists yet. The committed stack (`GOAL.md` §4) implies:
+Monorepo managed with **pnpm workspaces** (`pnpm-workspace.yaml`), **Node 22** (`.nvmrc`), pinned via
+the `packageManager` field. Run from the repo root:
+
+| Command                             | What it does                                         |
+| ----------------------------------- | ---------------------------------------------------- |
+| `pnpm install`                      | Install workspace deps (sets up Husky via `prepare`) |
+| `pnpm format` / `pnpm format:check` | Prettier write / check                               |
+| `pnpm lint` / `pnpm lint:fix`       | ESLint (flat config, `eslint.config.js`)             |
+| `pnpm typecheck`                    | `tsc -b` across project references                   |
+| `pnpm test` / `pnpm test:watch`     | Vitest (`--passWithNoTests` until tests land)        |
 
 - **Tests:** Vitest — unit (conversion math, cache logic) + integration (handlers with the provider
-  mocked). External provider must be mocked in tests; never call the live API from a test.
-- **Local dev / deploy:** SST (`sst dev`, `sst deploy`).
-- **Frontend:** Next.js, deployed via SST (OpenNext).
+  mocked). Never call the live API from a test.
+- **Local dev / deploy:** SST (`sst dev`, `sst deploy`) — _added when `sst.config.ts` lands._
+- **Frontend:** Next.js via SST (OpenNext) — _added with `web/`._
 
-Package manager and exact scripts are TBD — **update this section with the real commands the moment
-`package.json` lands.**
+TypeScript uses **project references**: `tsconfig.base.json` holds the strict options (incl.
+`noUncheckedIndexedAccess`); each package extends it and is added to the root `tsconfig.json`
+`references` so `tsc -b` and the editor resolve the whole graph.
 
 ### Repository workflow & tooling
 
@@ -109,11 +116,13 @@ Package manager and exact scripts are TBD — **update this section with the rea
   or `--squash`). A `PreToolUse` guardrail (`.claude/hooks/guard-git-workflow.sh`) enforces this for
   the agent (wired in `.claude/settings.json`, which the global gitignore keeps local — copy
   `.claude/settings.json.example` to enable it in a fresh clone). The real gate is CI branch protection.
-- **Quality-gate ladder (wire up when `package.json` lands):** pre-commit = Prettier + ESLint on
-  **staged files only** (fast); pre-push = typecheck + affected unit tests; **CI = full lint +
-  typecheck + all tests + build + secret scan** — the authoritative gate, re-running everything
-  because local hooks are bypassable. Prettier formats, ESLint checks correctness; keep them separate
-  via `eslint-config-prettier`. Consider a lint rule banning native float math on money (invariant §5.1).
+- **Quality-gate ladder (wired):** **pre-commit** (Husky + lint-staged) runs Prettier + ESLint on
+  **staged files only**; **commit-msg** enforces Conventional Commits (commitlint); **pre-push** runs
+  `pnpm typecheck`; **CI** (`.github/workflows/ci.yml`) runs the full lint + typecheck + test (+ build
+  once packages emit) and is the authoritative, non-bypassable gate — enable branch protection to
+  require it. Prettier formats, ESLint checks correctness (`eslint-config-prettier` keeps them
+  separate). ESLint also enforces two invariants as errors: **`packages/core` may not import
+  AWS/framework code** (§4) and **no `parseFloat` on money** (§5.1, heuristic).
 - **Secrets:** `.github/workflows/secret-scan.yml` (gitleaks) runs on every push/PR. The provider App
   ID lives only in `.env` (gitignored) or an SST Secret — see §5.6.
 - **Docs travel with code (anti-drift):** update the affected doc layer in the **same PR** as the

@@ -8,7 +8,7 @@
 
 This project intentionally defers several mechanism-level decisions in its vision doc (see
 [`CLAUDE.md`](../../CLAUDE.md) §9 and [`GOAL.md`](../../GOAL.md) §10). As those decisions are made
-during implementation, we need a durable, reviewable record of *why* — so future contributors
+during implementation, we need a durable, reviewable record of _why_ — so future contributors
 (human or agent) don't silently re-litigate or undo them.
 
 ## Decision

@@ -9,12 +9,12 @@ persist across sessions and clients. Built for the Purple LAB "Backend Developer
 
 ## Documentation map
 
-| Audience | Doc |
-|----------|-----|
-| **Agents** (Claude, etc.) | [`CLAUDE.md`](./CLAUDE.md) — architecture, invariants, commands |
-| **Humans — vision** | [`GOAL.md`](./GOAL.md) — north-star / definition of done |
-| **Humans — decisions** | [`docs/adr/`](./docs/adr) — Architecture Decision Records |
-| **API contract** | _TODO_: OpenAPI at `/api/openapi.json`, generated from the validation schemas |
+| Audience                  | Doc                                                                           |
+| ------------------------- | ----------------------------------------------------------------------------- |
+| **Agents** (Claude, etc.) | [`CLAUDE.md`](./CLAUDE.md) — architecture, invariants, commands               |
+| **Humans — vision**       | [`GOAL.md`](./GOAL.md) — north-star / definition of done                      |
+| **Humans — decisions**    | [`docs/adr/`](./docs/adr) — Architecture Decision Records                     |
+| **API contract**          | _TODO_: OpenAPI at `/api/openapi.json`, generated from the validation schemas |
 
 ## Architecture (summary)
 
@@ -30,9 +30,9 @@ A TypeScript monorepo on AWS, with all infrastructure as code via SST. Full deta
 
 ## Prerequisites
 
-- Node.js (LTS) and a package manager — _TODO: pin exact versions once scaffolded_
+- **Node 22** (see `.nvmrc`) and **pnpm** (pinned via `packageManager`; `corepack enable` provides it)
 - An [openexchangerates.org](https://openexchangerates.org/signup/free) App ID (free plan)
-- AWS credentials configured locally (for `sst dev` / deploy)
+- AWS credentials configured locally (for `sst dev` / deploy, once infra lands)
 
 ## Local setup
 
@@ -43,13 +43,22 @@ A TypeScript monorepo on AWS, with all infrastructure as code via SST. Full deta
    ```
    The App ID is a **secret** — it stays in `.env` (gitignored) or an SST Secret, and is **never**
    shipped to the browser. The frontend talks only to our API, never to the provider directly.
-2. Install dependencies — _TODO_
-3. Run the dev stack — _TODO_ (`sst dev`)
+2. Install dependencies: `pnpm install` (also sets up the Git hooks via Husky).
+3. Run the dev stack — _TODO_ (`sst dev`, once `sst.config.ts` lands).
 
 ## Commands
 
-_TODO — wired up once `package.json` lands. See [`CLAUDE.md`](./CLAUDE.md) §8 for the planned
-test / dev / deploy commands (Vitest, SST)._
+Run from the repo root:
+
+```bash
+pnpm format         # Prettier write       pnpm format:check  # Prettier check (CI)
+pnpm lint           # ESLint               pnpm lint:fix      # ESLint autofix
+pnpm typecheck      # tsc -b               pnpm test          # Vitest
+```
+
+The quality gate runs automatically: **pre-commit** (Prettier + ESLint on staged files),
+**commit-msg** (Conventional Commits), **pre-push** (typecheck), and **CI** (the full suite). See
+[`CLAUDE.md`](./CLAUDE.md) §8.
 
 ## Deployment
 

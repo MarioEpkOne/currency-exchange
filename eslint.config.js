@@ -1,0 +1,61 @@
+// @ts-check
+import js from '@eslint/js';
+import tseslint from 'typescript-eslint';
+import eslintConfigPrettier from 'eslint-config-prettier';
+
+export default tseslint.config(
+  {
+    ignores: [
+      '**/dist/**',
+      '**/build/**',
+      '**/.next/**',
+      '**/.open-next/**',
+      '**/coverage/**',
+      '**/.sst/**',
+      '.husky/_/**',
+    ],
+  },
+  js.configs.recommended,
+  ...tseslint.configs.recommended,
+  {
+    // Architecture boundary (CLAUDE.md §4): packages/core stays AWS/framework-free.
+    files: ['packages/core/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [{ name: 'aws-sdk', message: 'packages/core must stay AWS-free (CLAUDE.md §4).' }],
+          patterns: [
+            {
+              group: ['@aws-sdk/*', 'sst', 'sst/*', 'next', 'next/*'],
+              message: 'packages/core must stay framework/AWS-free (CLAUDE.md §4).',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    // Money correctness (CLAUDE.md §5.1): no native float parsing on monetary code.
+    // Heuristic — catches the common footguns, not every float operation.
+    files: ['packages/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-globals': [
+        'error',
+        {
+          name: 'parseFloat',
+          message: 'Use the decimal library for money, not parseFloat (CLAUDE.md §5.1).',
+        },
+      ],
+      'no-restricted-properties': [
+        'error',
+        {
+          object: 'Number',
+          property: 'parseFloat',
+          message: 'Use the decimal library for money, not Number.parseFloat (CLAUDE.md §5.1).',
+        },
+      ],
+    },
+  },
+  eslintConfigPrettier,
+);
