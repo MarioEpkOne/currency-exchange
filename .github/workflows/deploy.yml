@@ -1,0 +1,54 @@
+name: deploy
+
+# Runs ONLY after the `ci` workflow succeeds on `main`, so we never deploy a red build.
+# Auth to AWS is via GitHub OIDC (short-lived token) — there are NO AWS keys stored in GitHub.
+on:
+  workflow_run:
+    workflows: [ci]
+    types: [completed]
+    branches: [main]
+
+# OIDC needs id-token: write. Everything else stays read-only.
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    # Only deploy when the upstream CI run actually passed.
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    # Optional but recommended: a protected GitHub Environment can require manual
+    # approval before a production deploy. Configure under Settings > Environments.
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Check out the exact commit CI validated, not whatever main is now.
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Exchange the GitHub OIDC token for short-lived AWS creds by assuming the
+      # deploy role. role-to-assume is a NON-secret ARN; region is a plain var.
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+          role-session-name: gha-currency-exchange-deploy
+
+      # The openexchangerates App ID is NOT passed here — it lives in AWS SSM via
+      # `sst secret set` and is resolved at deploy time. Nothing secret in this file.
+      - name: SST deploy (production)
+        run: pnpm sst deploy --stage production

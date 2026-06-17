@@ -141,9 +141,18 @@ TypeScript uses **project references**: `tsconfig.base.json` holds the strict op
 ### Up-to-date library docs (Context7)
 
 Before writing or debugging against a fast-moving dependency, pull current docs via the **Context7**
-MCP — training data lags these. Especially **SST v3 (Ion)** (infra API differs a lot from v2),
-**AWS SDK for JS v3** (DynamoDB client/commands), **Next.js App Router**, **Zod**, and **decimal.js**.
-Prefer Context7 over assuming an API.
+MCP — training data lags these. Especially **SST v4** (Ion-family; `$config`/`sst.aws.*`/`link`,
+infra API differs a lot from v2), **AWS SDK for JS v3** (DynamoDB client/commands), **Next.js App
+Router**, **Zod**, and **decimal.js**. Prefer Context7 over assuming an API.
+
+### Deployment & CI/CD
+
+Live deploy is `pnpm sst deploy --stage production`. **Production CI/CD runs from GitHub Actions via
+AWS OIDC — no static AWS keys are ever stored in GitHub** (`.github/workflows/deploy.yml` assumes a
+repo-scoped IAM role with a short-lived token after `ci` passes on `main`). The openexchangerates App
+ID lives only in AWS SSM via `sst secret set` — never in the repo or GitHub. Full runbook + the
+one-time OIDC bootstrap (`infra/aws/bootstrap-github-oidc.sh`): [`infra/aws/README.md`](infra/aws/README.md).
+The long-lived `sst-deploy` IAM user is for **manual/local** deploys only; CI uses the keyless role.
 
 ## 9. Resolved decisions (formerly "Deferred")
 

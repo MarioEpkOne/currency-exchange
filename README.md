@@ -61,13 +61,20 @@ A TypeScript monorepo on AWS, with all infrastructure as code via SST. Full deta
 
 ## Deploy
 
+Manual deploy from a trusted machine (with AWS credentials configured):
+
 ```bash
-sst secret set OpenExchangeRatesAppId YOUR_APP_ID_HERE  # if not already set
-sst deploy
+pnpm sst secret set OpenExchangeRatesAppId YOUR_APP_ID_HERE --stage production  # if not already set
+pnpm sst deploy --stage production
 ```
 
 `sst deploy` produces a live public URL serving the three API endpoints and the Next.js site.
-All infrastructure is defined in `sst.config.ts` (SST v3 / Ion).
+All infrastructure is defined in `sst.config.ts` (SST v4).
+
+**Production CI/CD** (GitHub Actions → AWS via OIDC, **no AWS keys stored in GitHub**) is
+documented in [`infra/aws/README.md`](./infra/aws/README.md): on every CI-green push to `main`,
+the `deploy` workflow assumes a repo-scoped IAM role with a short-lived token and runs
+`sst deploy --stage production`. The App ID lives only in AWS SSM — never in GitHub.
 
 ## Commands
 
