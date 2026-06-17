@@ -6,6 +6,7 @@ import {
   validateConvertShape,
   convert as coreConvert,
   usdValue,
+  formatMoney,
   supportedFromRates,
   noRatesAvailable,
   AppError,
@@ -82,8 +83,11 @@ export const handler = async (event: APIGatewayProxyEventV2): Promise<APIGateway
     const convertResult = {
       from: parsed.from,
       to: parsed.to,
-      amount: parsed.amount.toFixed(parsed.amount.decimalPlaces() ?? 0),
-      result: result.toFixed(result.decimalPlaces() ?? 0),
+      // Money fields are formatted to their currency's decimal places (USD=2, JPY=0)
+      // and padded — e.g. a USD result of 92 serializes as "92.00", not "92".
+      amount: formatMoney(parsed.amount, parsed.from),
+      result: formatMoney(result, parsed.to),
+      // rate is a ratio, not a currency amount — keep its natural precision (1 for from==to).
       rate: rate.toFixed(rate.decimalPlaces() ?? 6),
       asOf: fetchedAt,
       stale,

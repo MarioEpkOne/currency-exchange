@@ -216,6 +216,68 @@ describe('/convert handler — validation precedes 503 (no cache + provider down
   });
 });
 
+describe('/convert handler — money-value wire format (currency dp)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(dynamo.getRateSnapshot).mockResolvedValue(freshSnapshot());
+    vi.mocked(dynamo.recordConversion).mockResolvedValue(undefined);
+  });
+
+  it('USD→EUR 100 → amount "100.00", result "92.00", rate "0.92" (USD/EUR = 2 dp, padded)', async () => {
+    const res = await handler(makeEvent({ from: 'USD', to: 'EUR', amount: '100' }));
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.body as string) as { amount: string; result: string; rate: string };
+    expect(body.amount).toBe('100.00');
+    expect(body.result).toBe('92.00');
+    expect(body.rate).toBe('0.92');
+  });
+
+  it('EUR→JPY 100 → result "17646" (0 dp, banker-rounded, no decimal point)', async () => {
+    const res = await handler(makeEvent({ from: 'EUR', to: 'JPY', amount: '100' }));
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.body as string) as { result: string };
+    // JPY = 0 dp; 100 * (162.34/0.92) = 17645.65… → 17646
+    expect(body.result).toBe('17646');
+    expect(body.result).toMatch(/^\d+$/);
+  });
+
+  it('from==to JPY 100.7 → amount/result normalized to 0 dp "101", rate "1", counts JPY', async () => {
+    const res = await handler(makeEvent({ from: 'JPY', to: 'JPY', amount: '100.7' }));
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.body as string) as { amount: string; result: string; rate: string };
+    expect(body.amount).toBe('101');
+    expect(body.result).toBe('101');
+    expect(body.rate).toBe('1');
+    expect(dynamo.recordConversion).toHaveBeenCalledOnce();
+    const [toCurrency] = vi.mocked(dynamo.recordConversion).mock.calls[0] ?? [];
+    expect(toCurrency).toBe('JPY');
+  });
+});
+
+describe('/convert handler — input caps precede 503 (no cache + provider down)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(dynamo.getRateSnapshot).mockResolvedValue(null);
+    vi.mocked(provider.fetchLatest).mockRejectedValue(new AppError('PROVIDER_ERROR', 502, 'down'));
+  });
+
+  it('amount > 1e15 → 400 INVALID_AMOUNT, not 503', async () => {
+    const res = await handler(makeEvent({ from: 'USD', to: 'EUR', amount: '1e16' }));
+    expect(res.statusCode).toBe(400);
+    const body = JSON.parse(res.body as string) as { error: { code: string } };
+    expect(body.error.code).toBe('INVALID_AMOUNT');
+  });
+
+  it('amount with > 20 significant digits → 400 INVALID_AMOUNT, not 503', async () => {
+    const res = await handler(
+      makeEvent({ from: 'USD', to: 'EUR', amount: '123456789012345678901' }),
+    );
+    expect(res.statusCode).toBe(400);
+    const body = JSON.parse(res.body as string) as { error: { code: string } };
+    expect(body.error.code).toBe('INVALID_AMOUNT');
+  });
+});
+
 describe('/convert handler — stats write', () => {
   beforeEach(() => {
     vi.clearAllMocks();
