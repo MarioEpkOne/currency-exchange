@@ -39,8 +39,8 @@ importers:
         specifier: ^3.8.4
         version: 3.8.4
       sst:
-        specifier: ^4.5.2
-        version: 4.5.2
+        specifier: ^4.15.2
+        version: 4.15.2
       typescript:
         specifier: ^6.0.3
         version: 6.0.3
@@ -119,6 +119,10 @@ packages:
 
   '@aws-sdk/client-dynamodb@3.1070.0':
     resolution: {integrity: sha512-H5rA840DhCV0cFb5t5pWcixLXzpG/d8knhkSAh5hrkzJkoPnz2k2MAmSiPy8mzOZysQcTyNq28grRUpZ3aQbWg==}
+    engines: {node: '>=20.0.0'}
+
+  '@aws-sdk/client-lambda@3.1070.0':
+    resolution: {integrity: sha512-v9xBUFCtLnhrdf/sWZETvGggTDDMF0dLTQ/D9AmHBXSOjJ9BZ8O3V2Mr0htfu5A58dK8Rkxcw5f7YMuFui35mw==}
     engines: {node: '>=20.0.0'}
 
   '@aws-sdk/core@3.974.21':
@@ -204,6 +208,10 @@ packages:
   '@aws-sdk/xml-builder@3.972.30':
     resolution: {integrity: sha512-StElZPEoBquWwNqw1AcfpzEyZqJvFxouG+mpDNYlcH6ZOrqd2CuIryv+8LV8gNHZUOyKyJF3Dq9vxaXEmDR9TQ==}
     engines: {node: '>=20.0.0'}
+
+  '@aws/durable-execution-sdk-js@1.0.2':
+    resolution: {integrity: sha512-KIYBVqV9gArkWdPEDYOjJqLlO+NecmCXOXadNBlOspJTmqztwuiyb6aZc468bYWSGuL4Me/gyTIK97ubkwFNCw==}
+    engines: {node: '>=22'}
 
   '@aws/lambda-invoke-store@0.2.4':
     resolution: {integrity: sha512-iY8yvjE0y651BixKNPgmv1WrQc+GZ142sb0z4gYnChDDY2YqI4P/jsSopBWrKfAt7LOJAkOXt7rC/hms+WclQQ==}
@@ -1550,48 +1558,48 @@ packages:
     resolution: {integrity: sha512-UXWMKhLOwVKb728IUtQPXxfYU+usdybtUrK/8uGE8CQMvrhOpwvzDBwj0QhSL7MQc7vIsISBG8VQ8+IDQxpfQA==}
     engines: {node: '>=0.10.0'}
 
-  sst-darwin-arm64@4.5.2:
-    resolution: {integrity: sha512-k/H9RSDn22uNuX1+X73IWEOhFOhTVrf+OGToqbuxv7IZmBIEikmKJ2A0+RLG7JyrUSV7SL/z3RFpPnw9ozM/VQ==}
+  sst-darwin-arm64@4.15.2:
+    resolution: {integrity: sha512-jTOaR9+tCOQoEDcPL0i59Zf5nmPv3C91Lt2wvikyBnq+Zibpen1zsQaQ3S3v5R0MAH+AqlBMBkXx3vD9dVve0Q==}
     cpu: [arm64]
     os: [darwin]
 
-  sst-darwin-x64@4.5.2:
-    resolution: {integrity: sha512-Ecku71eBNdBnKhgFILHStb7Zc6shmUTPEOFX+mCtxeBRAnvKrDs8F+4bAytASPnenoVig029HLJMlTx0KIE7ag==}
+  sst-darwin-x64@4.15.2:
+    resolution: {integrity: sha512-KZ/DJBdN3kDnNSXr7hPeR10dnCNpSLaIn1gjXvXO/rgMeawfaaPA74zU1Su0yjA47fbIC3nH5TT2+S/6vFZD+A==}
     cpu: [x64]
     os: [darwin]
 
-  sst-linux-arm64@4.5.2:
-    resolution: {integrity: sha512-N6UITEzkLh3HpDsgp+0UTeJlUicug8PKnfppOKSaeQ//g2GxtUUYGinSzsx1DqXQ8fMfHH2Pd1PYgsSXn8PMRA==}
+  sst-linux-arm64@4.15.2:
+    resolution: {integrity: sha512-zT1+suSr5DRCTTPVUo8LmJjXnFxXj49CRRMoGnBq4QBeeyzOaw/L3uwZ4GDn91+s7kGRMpykhsSPBgplBETM8w==}
     cpu: [arm64]
     os: [linux]
 
-  sst-linux-x64@4.5.2:
-    resolution: {integrity: sha512-hbPfn3b5G0mC5jfx6Ebg9XBs2FMCx0jxTdV2bgniLThKbEPvnmfa5D2+sLON7VWx5653I7ETJ0bLxJoiNUPMDg==}
+  sst-linux-x64@4.15.2:
+    resolution: {integrity: sha512-Da7FI3ziaTfLsWx/vTuUPlSDfNIF2LHuEPugp/Y4w5pBTJ3cYbBhMhPC6KnXI46itvOfDYHdsFdVrDKJ8dpEsQ==}
     cpu: [x64]
     os: [linux]
 
-  sst-linux-x86@4.5.2:
-    resolution: {integrity: sha512-hiUXAm6vNsh0c1D4OElMG1uTeZCCEBR61QWtGFQGLFp48+vBycvs+HdDWPUhr+UdVUtZSfhyHxKNUVod5V4XKA==}
+  sst-linux-x86@4.15.2:
+    resolution: {integrity: sha512-ZzJPul4U++Cg/UJmJVSUV0ndMbcImUbnqwxYhf5EaQLaO+se6AX52uIZBlQTxIQ6rrnHAq5Kw7WUWur7A/BZQA==}
     cpu: [x86]
     os: [linux]
 
-  sst-win32-arm64@4.5.2:
-    resolution: {integrity: sha512-C/mJdH2FG4YxudHSAoSvh2rF9tAKP4Z8cO136lZJRISyNnBS4yh84GJCuu78vmUZ7uv05fAItbYoS10eZ/6+hQ==}
+  sst-win32-arm64@4.15.2:
+    resolution: {integrity: sha512-DrovhJEZgo+W9s/AL1CdBeqdyG9nu8e8N7S5yxYFgoPJVti6mBDBZKY9HjYjkHXBYOPw6slcdHlh64DqDRzI9g==}
     cpu: [arm64]
     os: [win32]
 
-  sst-win32-x64@4.5.2:
-    resolution: {integrity: sha512-0I/M7Op5kn6sztDH7kLegOMsVcAwf8/NAc6DGhypcBtkOTTj1QIGx+TtWF1RGC4q1V11sD/kjEs6iXIPBjzyEg==}
+  sst-win32-x64@4.15.2:
+    resolution: {integrity: sha512-tywny4cRVFJUAHGsSxeIH2p/4AEigJks5UjC0HuP0kr/AyWeuCHglXsdf4JGMxSrHY6phdcSLUqhPKruZsjOwA==}
     cpu: [x64]
     os: [win32]
 
-  sst-win32-x86@4.5.2:
-    resolution: {integrity: sha512-BjQCG/rJpE7M8Ch0h81cHf8ImbvJ1ovgODalHfkiPY0tKJuf3LL9j2n4D6UtBbaUFLgNcU/6FX7ROTrCjtWMEw==}
+  sst-win32-x86@4.15.2:
+    resolution: {integrity: sha512-p3TKMSP8t6K+h54dZB/AAu1LTkhjZ4Zn+h5x4nTzpAery7VzBxYseA/9F/DnAbck0pfHRsu3TBYtyHJsvCFJ0A==}
     cpu: [x86]
     os: [win32]
 
-  sst@4.5.2:
-    resolution: {integrity: sha512-gDiksHNPv0AopmjHPK+s5cAa7WfiWAj06xWVVjdN2t1d8PE25NM8YmffspOw/CvHgywoJjtmTIaBT8M8mgZ0UA==}
+  sst@4.15.2:
+    resolution: {integrity: sha512-PJX4rVQ66g1NgzWucm+Zelv0S5/hhqT5DkedKPb6IZSxyLz0R5r9hI2xO5ITS9hSY8IdUeJl1WMMca8f3vNd9Q==}
     hasBin: true
 
   stackback@0.0.2:
@@ -1864,6 +1872,19 @@ snapshots:
       '@smithy/types': 4.15.0
       tslib: 2.8.1
 
+  '@aws-sdk/client-lambda@3.1070.0':
+    dependencies:
+      '@aws-crypto/sha256-browser': 5.2.0
+      '@aws-crypto/sha256-js': 5.2.0
+      '@aws-sdk/core': 3.974.21
+      '@aws-sdk/credential-provider-node': 3.972.56
+      '@aws-sdk/types': 3.973.13
+      '@smithy/core': 3.25.0
+      '@smithy/fetch-http-handler': 5.5.0
+      '@smithy/node-http-handler': 4.8.0
+      '@smithy/types': 4.15.0
+      tslib: 2.8.1
+
   '@aws-sdk/core@3.974.21':
     dependencies:
       '@aws-sdk/types': 3.973.13
@@ -2036,6 +2057,10 @@ snapshots:
       '@smithy/types': 4.15.0
       fast-xml-parser: 5.7.3
       tslib: 2.8.1
+
+  '@aws/durable-execution-sdk-js@1.0.2':
+    dependencies:
+      '@aws-sdk/client-lambda': 3.1070.0
 
   '@aws/lambda-invoke-store@0.2.4': {}
 
@@ -3289,44 +3314,45 @@ snapshots:
 
   source-map-js@1.2.1: {}
 
-  sst-darwin-arm64@4.5.2:
+  sst-darwin-arm64@4.15.2:
     optional: true
 
-  sst-darwin-x64@4.5.2:
+  sst-darwin-x64@4.15.2:
     optional: true
 
-  sst-linux-arm64@4.5.2:
+  sst-linux-arm64@4.15.2:
     optional: true
 
-  sst-linux-x64@4.5.2:
+  sst-linux-x64@4.15.2:
     optional: true
 
-  sst-linux-x86@4.5.2:
+  sst-linux-x86@4.15.2:
     optional: true
 
-  sst-win32-arm64@4.5.2:
+  sst-win32-arm64@4.15.2:
     optional: true
 
-  sst-win32-x64@4.5.2:
+  sst-win32-x64@4.15.2:
     optional: true
 
-  sst-win32-x86@4.5.2:
+  sst-win32-x86@4.15.2:
     optional: true
 
-  sst@4.5.2:
+  sst@4.15.2:
     dependencies:
+      '@aws/durable-execution-sdk-js': 1.0.2
       aws4fetch: 1.0.18
       jose: 5.2.3
       openid-client: 5.6.4
     optionalDependencies:
-      sst-darwin-arm64: 4.5.2
-      sst-darwin-x64: 4.5.2
-      sst-linux-arm64: 4.5.2
-      sst-linux-x64: 4.5.2
-      sst-linux-x86: 4.5.2
-      sst-win32-arm64: 4.5.2
-      sst-win32-x64: 4.5.2
-      sst-win32-x86: 4.5.2
+      sst-darwin-arm64: 4.15.2
+      sst-darwin-x64: 4.15.2
+      sst-linux-arm64: 4.15.2
+      sst-linux-x64: 4.15.2
+      sst-linux-x86: 4.15.2
+      sst-win32-arm64: 4.15.2
+      sst-win32-x64: 4.15.2
+      sst-win32-x86: 4.15.2
 
   stackback@0.0.2: {}
 
