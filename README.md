@@ -2,7 +2,7 @@
 
 A deployed, serverless currency converter: enter an amount and a source currency, pick a target
 currency, and get an accurate result backed by **live exchange rates** — plus usage statistics that
-persist across sessions and clients. Built for the Purple LAB "Backend Developer 2026" case study.
+persist across sessions and clients.
 
 > **Status: live in production.** API, frontend, DynamoDB, and SST infra are deployed to AWS
 > (`eu-central-1`).
